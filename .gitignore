@@ -7,6 +7,7 @@ ndkpath.txt
 QPM/
 ninja-build/
 build/
+.idea/
 *.cmake
 
 # QPM
