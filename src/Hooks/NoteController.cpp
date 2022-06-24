@@ -31,7 +31,7 @@ using namespace GlobalNamespace;
 using namespace UnityEngine;
 using namespace TrackParenting;
 
-BeatmapObjectAssociatedData *noteUpdateAD;
+BeatmapObjectAssociatedData *noteUpdateAD = nullptr;
 TracksAD::TracksVector noteTracks;
 
 float noteTimeAdjust(float original, float jumpDuration) {
@@ -116,7 +116,6 @@ MAKE_HOOK_MATCH(NoteController_Init, &NoteController::Init, void,
     for (auto *materialSwitcher: materialSwitchers) {
         materialSwitcher->renderer->set_sharedMaterial(materialSwitcher->material0);
     }
-    ad.dissolveEnabled = false;
 
     NoteJump *noteJump = self->noteMovement->jump;
     NoteFloorMovement *floorMovement = self->noteMovement->floorMovement;
@@ -174,6 +173,9 @@ MAKE_HOOK_MATCH(NoteController_ManualUpdate, &NoteController::ManualUpdate, void
 
     if (!Hooks::isNoodleHookEnabled())
         return NoteController_ManualUpdate(self);
+
+    noteUpdateAD = nullptr;
+    noteTracks.clear();
 
     auto *customNoteData =
         reinterpret_cast<CustomJSONData::CustomNoteData *>(self->noteData);
@@ -330,6 +332,12 @@ MAKE_HOOK_MATCH(NoteController_ManualUpdate, &NoteController::ManualUpdate, void
     }
 
     NoteController_ManualUpdate(self);
+
+    // NoteJump.ManualUpdate will be the last place this is used after it was set in
+    // NoteController.ManualUpdate. To make sure it doesn't interfere with future notes, it's set
+    // back to null
+    noteUpdateAD = nullptr;
+    noteTracks.clear();
 }
 
 void InstallNoteControllerHooks(Logger &logger) {
